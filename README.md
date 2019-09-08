@@ -1,5 +1,5 @@
 # Advanced Lane Finding Project
-![alt text][image11]
+![alt text][image12]
 
 The goals / steps of this project are the following:
 
@@ -25,6 +25,7 @@ The goals / steps of this project are the following:
 [image9]: ./output_images/test_images_sliding_windows/test2.jpg "Sliding windows"
 [image10]: ./output_images/test_images_polynomial/test2.jpg "Lane polynomial"
 [image11]: ./output_images/test_images_with_lanes/test2.jpg "Lane polynomial"
+[image12]: ./lane-finding-gif.gif "GIF"
 [video1]: ./project_video.mp4 "Video"
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points
