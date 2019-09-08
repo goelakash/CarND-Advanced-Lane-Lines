@@ -191,3 +191,10 @@ Here's a [link to my video result](./project_video_output.mp4)
 #### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
 Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
+
+##### Issue #1: Unable to get good thresholds for magnitude and saturation level channels
+I experimented with different levels of thresholds but couldn't seem, to find a general approach that works well for all the images.
+Solution: I ended up warping the image to get the bird's eye perspective first so that I could better reason about my thresholding logic.
+
+##### Issue #2: Lanes are not properly detected in shadows
+I've been using HLS channels along with the gradient magnitude. I will next try using the HSV colorspace instead to see if I can get rid of noise created due to shadows. Currently this is why the lane detection is mediocre on the challenge video, and useless on the harder challenge video.
