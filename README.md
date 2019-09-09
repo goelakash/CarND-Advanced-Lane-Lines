@@ -152,9 +152,8 @@ def curvature(leftx, rightx, yaxis_points, left_fit, right_fit, ym_per_pix, xm_p
     left_fit_cr = np.polyfit(yaxis_points*ym_per_pix, leftx*xm_per_pix, 2)
     right_fit_cr = np.polyfit(yaxis_points*ym_per_pix, rightx*xm_per_pix, 2)
     y_eval = np.max(yaxis_points)
-
-    left_curverad = np.float_power(1+np.square(2*left_fit_cr[0]*y_eval*ym_per_pix+left_fit_cr[1]) ,1.5)/np.abs(2*left_fit_cr[0])  ## Implement the calculation of the left line here
-    right_curverad = np.float_power(1+np.square(2*right_fit_cr[0]*y_eval*ym_per_pix+right_fit_cr[1]) ,1.5)/np.abs(2*right_fit_cr[0])  ## Implement the calculation of the right line here
+    left_curverad = ((1 + (2*left_fit_cr[0]*y_eval*ym_per_pix + left_fit_cr[1])**2)**1.5) / np.absolute(2*left_fit_cr[0])
+    right_curverad = ((1 + (2*right_fit_cr[0]*y_eval*ym_per_pix + right_fit_cr[1])**2)**1.5) / np.absolute(2*right_fit_cr[0])
     return left_curverad, right_curverad
 ```
 
