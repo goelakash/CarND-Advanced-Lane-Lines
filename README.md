@@ -25,7 +25,7 @@ The goals / steps of this project are the following:
 [image9]: ./output_images/test_images_sliding_windows/test2.jpg "Sliding windows"
 [image10]: ./output_images/test_images_polynomial/test2.jpg "Lane polynomial"
 [image11]: ./output_images/test_images_with_lanes/test2.jpg "Lane polynomial"
-[image12]: ./lane-finding-gif.gif "GIF"
+[image12]: ./output_images/project-video-output.gif "GIF"
 [video1]: ./project_video.mp4 "Video"
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points
@@ -145,7 +145,7 @@ d) Using the x-axis points for left and right lane from the sliding window, I fi
 
 #### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
-I calculated the curvature using the polynomial that I fit as mentioned above. The function to get the curvature uses the curvature formula for the point where the lane starts (i.e. bottom of the image-mask for the polynomial).
+a) I calculated the curvature using the polynomial that I fit as mentioned above. The function to get the curvature uses the curvature formula for the point where the lane starts (i.e. bottom of the image-mask for the polynomial).
 
 ```python
 def curvature(leftx, rightx, yaxis_points, left_fit, right_fit, ym_per_pix, xm_per_pix):
@@ -156,6 +156,24 @@ def curvature(leftx, rightx, yaxis_points, left_fit, right_fit, ym_per_pix, xm_p
     right_curverad = ((1 + (2*right_fit_cr[0]*y_eval*ym_per_pix + right_fit_cr[1])**2)**1.5) / np.absolute(2*right_fit_cr[0])
     return left_curverad, right_curverad
 ```
+
+b) Using the unwarped lane image mask, I calculated the left and right boundary points of the lane by cleverly getting the histogram first and getting the first and last non-zero position in the histogram array. This is becuase the unwarped image mask will have all the pixels outside the lane as 0.0 and all the pixels within the lane as 1.0. The histogram function will get all the areas where the sum of the columns is non-zero, and that will be similar to the density region of the lane region in the image mask. Simply getting the bounds of this density region will give us the actual lane boundaries in the unwared image, so we can then proceed to calculate the lane-center in the real world image and its offset from the center of the camera image frame. Here's the function that does that:
+```python
+def distance_from_center(unwarped_img_mask):
+    '''Returns the difference of the lane center with the frame center with a flag if its to the right or not'''
+    width = unwarped_img_mask.shape[1]
+    frame_center = width//2
+    histogram = get_histogram(unwarped_img_mask)
+    left_x = histogram.nonzero()[0][0]
+    right_x = histogram.nonzero()[0][-1]
+    lane_mean = (right_x+left_x)//2
+    if lane_mean > frame_center:
+        # Lane is to the right, meaning car is to the left
+        return lane_mean-frame_center, -1
+    else:
+        # Lane is to the left, meaning car is to the right
+        return frame_center-lane_mean, 1
+```  
 
 #### 6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 
@@ -191,11 +209,35 @@ Here's a [link to my video result](./project_video_output.mp4)
 
 #### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
+My overall approach can be summarized as follows:
+
+1. Calibrate the camera using the chessboard images.
+2. Load the lane image (test image or project video frame)
+3. Undistort the image
+4. Warp the image to get bird's eye-view of the lanes
+5. Threshold on the warped perspective image using Lightness, Saturation and Gradient-magnitude image masks with appropriate thresholds.
+6. Using the combined image mask from step 5, find the sliding windows that will help in getting the approx x-coordinates for the lane boundaries.
+7. Using the approx x-coordinates from sliding windows, fit a 2nd order polynomial to get a smooth curve in the X-Y plane.
+8. Set the area within the left and right lane boundary curves from step 6 as non-zero.
+9. Unwarp the lane-area filled image mask from step 8 and superimpose it on the original image (i.e. test image or project video frame).
+10. Calculate the curvature and distance-from-centre figures using the polynomial values in X and the lane-area filled image mask respectively.
+11. Overwrite the curvature and distanc-from-centre figures onto the final image.
+12. Return the final image, along with the left and right lane-boundary coordinates which can be used later to caculate the lane boundaries again without having to use sliding windows again.
+
+#### The main issues I faced are:
 
 ##### Issue #1: Unable to get good thresholds for magnitude and saturation level channels
 I experimented with different levels of thresholds but couldn't seem, to find a general approach that works well for all the images.
-Solution: I ended up warping the image to get the bird's eye perspective first so that I could better reason about my thresholding logic.
+Solution: I ended up warping the image to get the bird's eye perspective first so that I could better reason about my thresholding logic. This way once I saw the warped image, I could easily empriment and intuit about the correct thresholds.
 
-##### Issue #2: Lanes are not properly detected in shadows
-I've been using HLS channels along with the gradient magnitude. I will next try using the HSV colorspace instead to see if I can get rid of noise created due to shadows. Currently this is why the lane detection is mediocre on the challenge video, and useless on the harder challenge video.
+##### Issue #2: Couldn't find direction gradient useful
+I checked the direction of gradient for the images, but none of the thresholds was able to drown out the noise from shadows of some other artifacts in the images themselves. I ended up not using it at all.
+
+##### Issue #3: Lanes are not properly detected in shadows
+I'm using the HLS colorspace to identify the lane lines. Will try to experiment with HSV and other colorspaces and see if it helps with filtering out shadows.
+
+#### The pipeline will not work well if:
+
+1. There's a lot of shadows in the image
+2. The road is very curved and generally the lane center doesn't coincide with the frame-center.
+3. Lane markings are very weak or sometimes absent.
